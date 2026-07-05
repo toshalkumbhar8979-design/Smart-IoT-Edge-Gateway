@@ -74,9 +74,10 @@ python src/edge_gateway.py
 python src/sensor_node.py
 ```
 
-### 4. View the dashboard
-Open **http://localhost:5000** in your browser. You'll see live sensor trends and a running
-anomaly log update in real time.
+### 4. Dashboard
+<img width="1246" height="599" alt="image" src="https://github.com/user-attachments/assets/24033426-0d53-44a8-a0fa-c3058a2f83ff" />
+
+
 
 ---
 
