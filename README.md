@@ -190,23 +190,6 @@ pytest tests/ -v
 
 ---
 
-## What This Demonstrates (for interviews)
-
-- **Distributed systems basics**: decoupled producers (sensors) and consumers (gateway) via a pub/sub broker
-- **Edge computing pattern**: local processing before cloud escalation — bandwidth/latency aware design
-- **Signal processing**: rolling statistics, z-score anomaly detection
-- **Systems integration**: MQTT + REST + SQLite + a live web dashboard working together
-- **Testable design**: core logic (anomaly detection, aggregation) is isolated and unit-tested independent of the network layer
-
-## Possible Extensions (mention these in an interview to show forward thinking)
-- Swap the simulated sensors for real hardware (Raspberry Pi + DHT22 sensor, ESP32 over Wi-Fi/MQTT)
-- Add TLS + client-cert auth on MQTT for a security-hardened version
-- Replace z-score detection with a lightweight ML model (e.g., isolation forest) for anomaly detection
-- Containerize each component (Docker Compose) to simulate multi-node deployment
-- Add horizontal scaling: multiple gateways behind a load-balanced cloud ingestion API
-
----
-
 ## Project Report
 See [`docs/report.md`](docs/report.md) for a full write-up (problem statement, design decisions,
 challenges, and results) suitable for a portfolio or university submission.
