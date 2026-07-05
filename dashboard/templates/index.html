@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Smart IoT Edge Gateway — Dashboard</title>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+  <style>
+    body { font-family: -apple-system, Segoe UI, Roboto, sans-serif; background: #0f172a; color: #e2e8f0; margin: 0; padding: 24px; }
+    h1 { font-size: 20px; margin-bottom: 4px; }
+    .subtitle { color: #94a3b8; margin-bottom: 24px; font-size: 14px; }
+    .grid { display: grid; grid-template-columns: 2fr 1fr; gap: 20px; }
+    .card { background: #1e293b; border-radius: 10px; padding: 16px; box-shadow: 0 1px 3px rgba(0,0,0,0.3); }
+    .card h2 { font-size: 15px; margin-top: 0; color: #cbd5e1; }
+    table { width: 100%; border-collapse: collapse; font-size: 13px; }
+    th, td { text-align: left; padding: 6px 4px; border-bottom: 1px solid #334155; }
+    th { color: #94a3b8; font-weight: 500; }
+    .anomaly-row { color: #f87171; }
+    .status-dot { display: inline-block; width: 8px; height: 8px; border-radius: 50%; background: #22c55e; margin-right: 6px; }
+  </style>
+</head>
+<body>
+  <h1><span class="status-dot"></span>Smart IoT Edge Gateway — Live Dashboard</h1>
+  <div class="subtitle">Aggregated sensor summaries forwarded from the edge gateway. Auto-refreshing every 3s.</div>
+
+  <div class="grid">
+    <div class="card">
+      <h2>Sensor Trends (rolling mean)</h2>
+      <canvas id="trendChart" height="110"></canvas>
+    </div>
+    <div class="card">
+      <h2>Recent Anomalies</h2>
+      <table id="anomalyTable">
+        <thead><tr><th>Sensor</th><th>Metric</th><th>Value</th><th>Time</th></tr></thead>
+        <tbody></tbody>
+      </table>
+    </div>
+  </div>
+
+  <div class="card" style="margin-top:20px;">
+    <h2>Latest Summaries</h2>
+    <table id="summaryTable">
+      <thead><tr><th>Sensor</th><th>Metric</th><th>Mean</th><th>Std Dev</th><th>Min</th><th>Max</th><th>Samples</th><th>Time</th></tr></thead>
+      <tbody></tbody>
+    </table>
+  </div>
+
+  <script>
+    const ctx = document.getElementById('trendChart').getContext('2d');
+    const chart = new Chart(ctx, {
+      type: 'line',
+      data: { labels: [], datasets: [] },
+      options: {
+        responsive: true,
+        scales: {
+          x: { ticks: { color: '#94a3b8' }, grid: { color: '#334155' } },
+          y: { ticks: { color: '#94a3b8' }, grid: { color: '#334155' } }
+        },
+        plugins: { legend: { labels: { color: '#e2e8f0' } } }
+      }
+    });
+
+    const seriesColors = ['#38bdf8', '#a78bfa', '#f472b6', '#34d399', '#fbbf24', '#fb923c'];
+    const seriesMap = {}; // key: sensor::metric -> dataset index
+
+    function colorFor(key) {
+      const idx = Object.keys(seriesMap).indexOf(key);
+      return seriesColors[idx % seriesColors.length];
+    }
+
+    async function refresh() {
+      const res = await fetch('/api/data');
+      const data = await res.json();
+
+      // --- update chart ---
+      const bySensor = {};
+      data.summaries.slice().reverse().forEach(row => {
+        const key = `${row.sensor_id}/${row.metric}`;
+        if (!bySensor[key]) bySensor[key] = [];
+        bySensor[key].push(row.mean);
+      });
+
+      const maxLen = Math.max(0, ...Object.values(bySensor).map(a => a.length));
+      chart.data.labels = Array.from({length: maxLen}, (_, i) => i + 1);
+      chart.data.datasets = Object.entries(bySensor).map(([key, values]) => {
+        if (!(key in seriesMap)) seriesMap[key] = Object.keys(seriesMap).length;
+        return {
+          label: key,
+          data: values,
+          borderColor: colorFor(key),
+          backgroundColor: 'transparent',
+          tension: 0.3,
+        };
+      });
+      chart.update();
+
+      // --- update anomaly table ---
+      const anomalyBody = document.querySelector('#anomalyTable tbody');
+      anomalyBody.innerHTML = data.anomalies.map(a => `
+        <tr class="anomaly-row">
+          <td>${a.sensor_id}</td><td>${a.metric}</td><td>${a.value}</td>
+          <td>${new Date(a.timestamp).toLocaleTimeString()}</td>
+        </tr>`).join('');
+
+      // --- update summary table ---
+      const summaryBody = document.querySelector('#summaryTable tbody');
+      summaryBody.innerHTML = data.summaries.slice(0, 15).map(s => `
+        <tr>
+          <td>${s.sensor_id}</td><td>${s.metric}</td><td>${s.mean}</td><td>${s.stdev}</td>
+          <td>${s.min}</td><td>${s.max}</td><td>${s.count}</td>
+          <td>${new Date(s.timestamp).toLocaleTimeString()}</td>
+        </tr>`).join('');
+    }
+
+    refresh();
+    setInterval(refresh, 3000);
+  </script>
+</body>
+</html>
