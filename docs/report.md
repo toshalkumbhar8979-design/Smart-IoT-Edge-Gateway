@@ -71,7 +71,7 @@ See the "Possible Extensions" section in the main README — real hardware integ
 TLS-secured MQTT, ML-based anomaly detection, and containerized multi-node deployment
 are natural next steps.
 
-## 8. Relevance to Ericsson / Telecom-IoT Roles
+## 8. Relevance to Telecom-IoT Roles
 This project directly touches concepts central to telecom infrastructure: edge computing
 to reduce backhaul load, resilient pub/sub messaging for distributed devices, and
 real-time monitoring/anomaly detection — all patterns used in 5G network function
